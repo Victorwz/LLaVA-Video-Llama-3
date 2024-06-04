@@ -2,7 +2,7 @@
 
 This repo supports the video understanding based on Llama-3-8b LLM backbone following LLaVA multimodal LLM architecture.
 
-🤝Community Contributions: [[weizhiwang/llava_llama3_8b_video](https://huggingface.co/weizhiwang/llava_llama3_8b_video)]
+🤝Community Contributions: [[weizhiwang/LLaVA-Video-Llama-3](https://huggingface.co/weizhiwang/LLaVA-Video-Llama-3)]
 
 ## Updates
 - This repo is upgraded to llava-next codebase to also support phi-3, llama-3 and mistral-v0.1 models.
@@ -32,11 +32,10 @@ Please follow the updated fine-tuning script with DeepSpeed ZeRO-3: [`finetune.s
 
 Please download the pre-trained vision-language projector weights in [Projector_MODEL](https://huggingface.co/weizhiwang/llava-v1.5-llama-3-8b-pretrain-clip-large-336px).
 
-In terms of the image data preparation, please follow [`DATA.md`](DATA.md).
+In terms of the image data preparation, please follow [`DATA.md`](DATA.md). The mixed SFT data with video instructions is available at [`video_data`](https://huggingface.co/datasets/weizhiwang/llava_v15_instruction_images/resolve/main/llava_phi_3_video_mix.json?download=true).
 
 ## Demo with Gradio
 Please follow [`DEMO.md`](DEMO.md).
-
 
 ### CLI Inference
 
@@ -44,7 +43,7 @@ Chat about images using LLaVA without the need of Gradio interface. It also supp
 
 ```Shell
 python -m llava.serve.cli \
-    --model-path weizhiwang/llava_llama3_8b_video \
+    --model-path weizhiwang/LLaVA-Video-Llama-3 \
     --image-file "https://llava-vl.github.io/static/images/view.jpg" \
     --load-4bit
 ```
@@ -64,8 +63,8 @@ See [Evaluation.md](https://github.com/haotian-liu/LLaVA/blob/main/docs/Evaluati
 This is a reproduction project, all research credits should be attributed to original authors for LLaVA. Please cite their papers listed below as well.
 
 ```bibtex
-@misc{wang2024llavallama3,
-  title={LLaVA-Llama-3-8B: A reproduction towards LLaVA-3 based on Llama-3-8B LLM backbone},
+@misc{wang2024llavavideollama3,
+  title={LLaVA-Video-Llama-3: A Video Understanding Multimodal LLM based on Llama-3-8B LLM backbone},
   author={Wang, Weizhi},
   year={2024}
 }
