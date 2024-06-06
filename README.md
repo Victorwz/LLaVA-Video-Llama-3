@@ -35,28 +35,13 @@ Please download the pre-trained vision-language projector weights in [Projector_
 In terms of the image data preparation, please follow [`DATA.md`](DATA.md). The mixed SFT data with video instructions is available at [`video_data`](https://huggingface.co/datasets/weizhiwang/llava_v15_instruction_images/resolve/main/llava_phi_3_video_mix.json?download=true).
 
 ## Demo with Gradio
-Please follow [`DEMO.md`](DEMO.md).
-
-### CLI Inference
-
-Chat about images using LLaVA without the need of Gradio interface. It also supports multiple GPUs, 4-bit and 8-bit quantized inference. With 4-bit quantization, for our LLaVA-Llama-8B, it uses less than 8GB VRAM on a single GPU.
-
-```Shell
-python -m llava.serve.cli \
-    --model-path weizhiwang/LLaVA-Video-Llama-3 \
-    --image-file "https://llava-vl.github.io/static/images/view.jpg" \
-    --load-4bit
+```shell
+CUDA_VISIBLE_DEVICES=0 python -m llava.serve.gradio_web_server --controller http://localhost:10000 --model-list-mode reload --share
 ```
-
-<img src="images/demo_cli.gif" width="70%">
-
-
 
 ## Evaluation
 
-In LLaVA-1.5, the authors evaluate models on a diverse set of 12 benchmarks. To ensure the reproducibility, we evaluate the models with greedy decoding. We do not evaluate using beam search to make the inference process consistent with the chat demo of real-time outputs.
-
-See [Evaluation.md](https://github.com/haotian-liu/LLaVA/blob/main/docs/Evaluation.md).
+TODO
 
 
 ## Credits
