@@ -21,12 +21,11 @@ import hashlib
 
 conv_mode = "llama_3"
 model_path = 'weizhiwang/LLaVA-Video-Llama-3'
-cache_dir = './cache_dir'
 device = 'cuda'
 load_8bit = False
 load_4bit = False
 dtype = torch.float16
-handler = Chat(model_path, conv_mode=conv_mode, load_8bit=load_8bit, load_4bit=load_8bit, device=device, cache_dir=cache_dir)
+handler = Chat(model_path, conv_mode=conv_mode, load_8bit=load_8bit, load_4bit=load_8bit, device=device)
 
 logger = build_logger("gradio_web_server", "gradio_web_server.log")
 
