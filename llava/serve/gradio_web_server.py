@@ -20,7 +20,7 @@ from llava.utils import (build_logger, server_error_msg,
 import hashlib
 
 conv_mode = "llama_3"
-model_path = 'weizhiwang/llava_llama3_8b_video'
+model_path = 'weizhiwang/LLaVA-Video-Llama-3'
 cache_dir = './cache_dir'
 device = 'cuda'
 load_8bit = False
@@ -29,6 +29,11 @@ dtype = torch.float16
 handler = Chat(model_path, conv_mode=conv_mode, load_8bit=load_8bit, load_4bit=load_8bit, device=device, cache_dir=cache_dir)
 
 logger = build_logger("gradio_web_server", "gradio_web_server.log")
+
+SYSTEM_PROMPT = """The input sequence of images are frames extracted from a short video. The video is about a comprehensive guidance to perform a specific task.
+
+The full task guideline is as follows:
+This next job is removal of the recoil starter. Again, it is just the removal, not the install. And that's if you need to take additional parts off, drilling down deeper into the engine. You would remove it, set it aside for other maintenance, and then return and do the install task as you're reassembling the engine. So first thing you want to do is, if you remove both these top two nuts first, as you start loosening up the bottom nut, it can kind of shift left or right on you. So it's best to loosen them all up and leave one of the top ones in to be the last thing removed. So we'll loosen these three up. Once they're loose... I don't know if you can see that bolt down there, bottom dead center. I'm going to go ahead and get a maintenance ball out here to hold some of these parts. Alright, three bolts and that's it. This thing comes off. I'll talk about it more when we install, but as you can see, there's holes all the way around, and there's three holes evenly spaced here. So depending on how this thing is mounted, whether it's on a snowmobile, a generator, this pull starter can be rotated into different positions to facilitate different mounting positions on different pieces of equipment. So you may see this mounted in different ways, and that's okay. It can be mounted in a full clock position. And that is removal of the recoil starter."""
 
 def save_image_to_local(image):
     filename = os.path.join('temp', next(tempfile._get_candidate_names()) + '.jpg')
@@ -70,7 +75,7 @@ def generate(image1, video, textbox_in, first_run, state, state_, images_tensor)
     # images_tensor = [[], []]
     image_processor = handler.image_processor
     if os.path.exists(image1) and not os.path.exists(video):
-        tensor = image_processor.preprocess(image1, return_tensors='pt')['pixel_values'][0]
+        tensor = image_processor.preprocess(Image.open(image1).convert("RGB"), return_tensors='pt')['pixel_values'][0]
         # print(tensor.shape)
         tensor = tensor.to(handler.model.device, dtype=dtype)
         images_tensor.append(tensor)
@@ -82,7 +87,7 @@ def generate(image1, video, textbox_in, first_run, state, state_, images_tensor)
         images_tensor += tensor
 
     if os.path.exists(image1) and os.path.exists(video):
-        tensor = video_processor(video, return_tensors='pt')['pixel_values'][0]
+        tensor = handler.process_video(video, return_tensors='pt')['pixel_values'][0]
         # print(tensor.shape)
         tensor = tensor.to(handler.model.device, dtype=dtype)
         images_tensor.append(tensor)
@@ -93,11 +98,11 @@ def generate(image1, video, textbox_in, first_run, state, state_, images_tensor)
         images_tensor.append(tensor)
 
     if os.path.exists(image1) and not os.path.exists(video):
-        text_en_in = DEFAULT_IMAGE_TOKEN + '\n' + text_en_in
+        text_en_in = DEFAULT_IMAGE_TOKEN + '\n' + SYSTEM_PROMPT + text_en_in if first_run else text_en_in
     if not os.path.exists(image1) and os.path.exists(video):
-        text_en_in = '\n'.join([DEFAULT_IMAGE_TOKEN] * len(images_tensor)) + '\n' + text_en_in if first_run else text_en_in
+        text_en_in = '\n'.join([DEFAULT_IMAGE_TOKEN] * len(images_tensor)) + '\n' + SYSTEM_PROMPT + text_en_in if first_run else text_en_in
     if os.path.exists(image1) and os.path.exists(video):
-        text_en_in = ''.join([DEFAULT_IMAGE_TOKEN] * handler.model.get_video_tower().config.num_frames) + '\n' + text_en_in + '\n' + DEFAULT_IMAGE_TOKEN
+        text_en_in = '\n'.join([DEFAULT_IMAGE_TOKEN] * len(images_tensor)) + '\n' + SYSTEM_PROMPT + text_en_in + '\n' + DEFAULT_IMAGE_TOKEN if first_run else text_en_in
     # print(text_en_in)
     text_en_out, state_ = handler.generate(images_tensor, text_en_in, first_run=first_run, state=state_)
     state_.messages[-1] = (state_.roles[1], text_en_out)
@@ -109,15 +114,15 @@ def generate(image1, video, textbox_in, first_run, state, state_, images_tensor)
     if os.path.exists(image1):
         filename = save_image_to_local(image1)
         show_images += f'<img src="./file={filename}" style="display: inline-block;width: 250px;max-height: 400px;">'
-    if os.path.exists(video):
-        filename = save_video_to_local(video)
-        show_images += f'<video controls playsinline width="500" style="display: inline-block;"  src="./file={filename}"></video>'
+    # if os.path.exists(video):
+    #     filename = save_video_to_local(video)
+    #     show_images += f'<video controls playsinline width="500" style="display: inline-block;"  src="./file={filename}"></video>'
 
     if flag:
         state.append_message(state.roles[0], textbox_in + "\n" + show_images)
     state.append_message(state.roles[1], textbox_out)
 
-    return (state, state_, state.to_gradio_chatbot(), False, gr.update(value=None, interactive=True), images_tensor, gr.update(value=image1 if os.path.exists(image1) else None, interactive=True), gr.update(value=video if os.path.exists(video) else None, interactive=True))
+    return (state, state_, state.to_gradio_chatbot(), False, gr.update(value=None, interactive=True), images_tensor, gr.update(value=image1 if os.path.exists(image1) else None, interactive=True))#, gr.update(value=video if os.path.exists(video) else None, interactive=True))
 
 
 def regenerate(state, state_):
@@ -179,7 +184,7 @@ def build_demo(embed_mode, cur_dir=None, concurrency_count=10):
                 )
 
             with gr.Column(scale=7):
-                chatbot = gr.Chatbot(label="Video-LLaVA", bubble_full_width=True, height=750)
+                chatbot = gr.Chatbot(label="LLaVA-Video-Llama-3", bubble_full_width=True, height=750)
                 with gr.Row():
                     with gr.Column(scale=8):
                         textbox.render()
@@ -220,29 +225,29 @@ def build_demo(embed_mode, cur_dir=None, concurrency_count=10):
                 examples=[
                     [
                         f"{cur_dir}/examples/sample_demo_1.mp4",
-                        "Why is this video funny?",
+                        "The input images follows time order and stops on a specific step of the whole task. Can you reason step by step to predict what is the next step to complete in this task?\n",
                     ],
-                    [
-                        f"{cur_dir}/examples/sample_demo_3.mp4",
-                        "Can you identify any safety hazards in this video?"
-                    ],
-                    [
-                        f"{cur_dir}/examples/sample_demo_9.mp4",
-                        "Describe the video.",
-                    ],
-                    [
-                        f"{cur_dir}/examples/sample_demo_22.mp4",
-                        "Describe the activity in the video.",
-                    ],
+                    # [
+                    #     f"{cur_dir}/examples/sample_demo_3.mp4",
+                    #     "Can you identify any safety hazards in this video?"
+                    # ],
+                    # [
+                    #     f"{cur_dir}/examples/sample_demo_9.mp4",
+                    #     "Describe the video.",
+                    # ],
+                    # [
+                    #     f"{cur_dir}/examples/sample_demo_22.mp4",
+                    #     "Describe the activity in the video.",
+                    # ],
                 ],
                 inputs=[video, textbox],
             )
 
         submit_btn.click(generate, [image1, video, textbox, first_run, state, state_, images_tensor],
-                        [state, state_, chatbot, first_run, textbox, images_tensor, image1, video])
+                        [state, state_, chatbot, first_run, textbox, images_tensor, image1])
 
         regenerate_btn.click(regenerate, [state, state_], [state, state_, chatbot, first_run]).then(
-            generate, [image1, video, textbox, first_run, state, state_, images_tensor], [state, state_, chatbot, first_run, textbox, images_tensor, image1, video])
+            generate, [image1, video, textbox, first_run, state, state_, images_tensor], [state, state_, chatbot, first_run, textbox, images_tensor, image1])
 
         clear_btn.click(clear_history, [state, state_],
                         [image1, video, textbox, first_run, state, state_, chatbot, images_tensor])
