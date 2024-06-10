@@ -32,7 +32,7 @@ logger = build_logger("gradio_web_server", "gradio_web_server.log")
 SYSTEM_PROMPT = """The input sequence of images are frames extracted from a short video. The video is about a comprehensive guidance to perform a specific task.
 
 The full task guideline is as follows:
-This next job is removal of the recoil starter. Again, it is just the removal, not the install. And that's if you need to take additional parts off, drilling down deeper into the engine. You would remove it, set it aside for other maintenance, and then return and do the install task as you're reassembling the engine. So first thing you want to do is, if you remove both these top two nuts first, as you start loosening up the bottom nut, it can kind of shift left or right on you. So it's best to loosen them all up and leave one of the top ones in to be the last thing removed. So we'll loosen these three up. Once they're loose... I don't know if you can see that bolt down there, bottom dead center. I'm going to go ahead and get a maintenance ball out here to hold some of these parts. Alright, three bolts and that's it. This thing comes off. I'll talk about it more when we install, but as you can see, there's holes all the way around, and there's three holes evenly spaced here. So depending on how this thing is mounted, whether it's on a snowmobile, a generator, this pull starter can be rotated into different positions to facilitate different mounting positions on different pieces of equipment. So you may see this mounted in different ways, and that's okay. It can be mounted in a full clock position. And that is removal of the recoil starter."""
+"""
 
 def save_image_to_local(image):
     filename = os.path.join('temp', next(tempfile._get_candidate_names()) + '.jpg')
@@ -48,7 +48,7 @@ def save_video_to_local(video_path):
     return filename
 
 
-def generate(image1, video, textbox_in, first_run, state, state_, images_tensor):
+def generate(image1, video, textbox_in, manual_textbox_in, first_run, state, state_, images_tensor):
     flag = 1
     if not textbox_in:
         if len(state_.messages) > 0:
@@ -97,11 +97,11 @@ def generate(image1, video, textbox_in, first_run, state, state_, images_tensor)
         images_tensor.append(tensor)
 
     if os.path.exists(image1) and not os.path.exists(video):
-        text_en_in = DEFAULT_IMAGE_TOKEN + '\n' + SYSTEM_PROMPT + text_en_in if first_run else text_en_in
+        text_en_in = DEFAULT_IMAGE_TOKEN + '\n' + SYSTEM_PROMPT + manual_textbox_in + text_en_in if first_run else text_en_in
     if not os.path.exists(image1) and os.path.exists(video):
-        text_en_in = '\n'.join([DEFAULT_IMAGE_TOKEN] * len(images_tensor)) + '\n' + SYSTEM_PROMPT + text_en_in if first_run else text_en_in
+        text_en_in = '\n'.join([DEFAULT_IMAGE_TOKEN] * len(images_tensor)) + '\n' + SYSTEM_PROMPT + manual_textbox_in + text_en_in if first_run else text_en_in
     if os.path.exists(image1) and os.path.exists(video):
-        text_en_in = '\n'.join([DEFAULT_IMAGE_TOKEN] * len(images_tensor)) + '\n' + SYSTEM_PROMPT + text_en_in + '\n' + DEFAULT_IMAGE_TOKEN if first_run else text_en_in
+        text_en_in = '\n'.join([DEFAULT_IMAGE_TOKEN] * len(images_tensor)) + '\n' + SYSTEM_PROMPT + manual_textbox_in + text_en_in + '\n' + DEFAULT_IMAGE_TOKEN if first_run else text_en_in
     # print(text_en_in)
     text_en_out, state_ = handler.generate(images_tensor, text_en_in, first_run=first_run, state=state_)
     state_.messages[-1] = (state_.roles[1], text_en_out)
@@ -151,6 +151,9 @@ def build_demo(embed_mode, cur_dir=None, concurrency_count=10):
     textbox = gr.Textbox(
         show_label=False, placeholder="Enter text and press ENTER", container=False
     )
+    manual_textbox = gr.Textbox(
+        show_label=False, placeholder="Insert the Task Manual", container=False
+    )
     with gr.Blocks(title='Video-LLaVA🚀', theme=gr.themes.Default(), css=block_css) as demo:
         gr.Markdown(title_markdown)
         state = gr.State()
@@ -162,7 +165,8 @@ def build_demo(embed_mode, cur_dir=None, concurrency_count=10):
             with gr.Column(scale=3):
                 image1 = gr.Image(label="Input Image", type="filepath")
                 video = gr.Video(label="Input Video")
-
+                with gr.Column(scale=8):
+                    manual_textbox.render()
                 cur_dir = os.path.dirname(os.path.abspath(__file__))
                 gr.Examples(
                     examples=[
@@ -224,12 +228,14 @@ def build_demo(embed_mode, cur_dir=None, concurrency_count=10):
                 examples=[
                     [
                         f"{cur_dir}/examples/sample_demo_1.mp4",
-                        "The input images follows time order and stops on a specific step of the whole task. Can you reason step by step to predict what is the next step to complete in this task?\n",
+                        "This next job is removal of the recoil starter. Again, it is just the removal, not the install. And that's if you need to take additional parts off, drilling down deeper into the engine. You would remove it, set it aside for other maintenance, and then return and do the install task as you're reassembling the engine. So first thing you want to do is, if you remove both these top two nuts first, as you start loosening up the bottom nut, it can kind of shift left or right on you. So it's best to loosen them all up and leave one of the top ones in to be the last thing removed. So we'll loosen these three up. Once they're loose... I don't know if you can see that bolt down there, bottom dead center. I'm going to go ahead and get a maintenance ball out here to hold some of these parts. Alright, three bolts and that's it. This thing comes off. I'll talk about it more when we install, but as you can see, there's holes all the way around, and there's three holes evenly spaced here. So depending on how this thing is mounted, whether it's on a snowmobile, a generator, this pull starter can be rotated into different positions to facilitate different mounting positions on different pieces of equipment. So you may see this mounted in different ways, and that's okay. It can be mounted in a full clock position. And that is removal of the recoil starter.\n",
+                        "The input sequence of images follow time order and stop on a specific step of the whole task. Can you reason step by step to predict what is the next step to complete in this task?\n",
                     ],
-                    # [
-                    #     f"{cur_dir}/examples/sample_demo_3.mp4",
-                    #     "Can you identify any safety hazards in this video?"
-                    # ],
+[
+                        f"{cur_dir}/examples/sample_demo_2.mp4",
+                        "This next task is similar to the first task we did, which was inspecting the air filters. This time we're going to remove the entire air assembly to get to the carburetor or other aspects. We're doing it for other maintenance removal. So we'll remove the nut or finger knot again, the air cleaner cover, the wing nut, the air filter assembly with the foam filter on the outside, and the grommet. We'll just put that to the side. The noise silencer, these two little baffles right here help reduce high frequency noise. And then now we need to remove what they call the air cleaner elbow. It's actually held in place with one bolt. Two nuts. And to remove this, you need to take your choke and pull it about halfway, and then your fuel shut off about halfway too. That way this can come out. We're going to pull the breather tube, which sits inside the overhead valve. It just snugly fits in there to allow breathing of the overhead valve. We will just pull that out. It doesn't clamp in or anything. And then we will remove... Might have to adjust these knobs just a little bit. And we will remove the air filter elbow. This allows you additional visibility to the control base, carburetor, spark plug, overhead valve. And this is, again, removal. So this is a whole task. We've removed it for other maintenance. There will be a separate install job later after you've done whatever you needed to do, maybe replace the carburetor. Then we'll reinstall it at another point for another job.\n",
+                        "The input sequence of images follow time order and stop on a specific step of the whole task. Can you reason step by step to predict what is the next step to complete in this task?\n",
+                    ],
                     # [
                     #     f"{cur_dir}/examples/sample_demo_9.mp4",
                     #     "Describe the video.",
@@ -239,17 +245,17 @@ def build_demo(embed_mode, cur_dir=None, concurrency_count=10):
                     #     "Describe the activity in the video.",
                     # ],
                 ],
-                inputs=[video, textbox],
+                inputs=[video, manual_textbox, textbox],
             )
 
-        submit_btn.click(generate, [image1, video, textbox, first_run, state, state_, images_tensor],
+        submit_btn.click(generate, [image1, video, textbox, manual_textbox, first_run, state, state_, images_tensor],
                         [state, state_, chatbot, first_run, textbox, images_tensor, image1])
 
         regenerate_btn.click(regenerate, [state, state_], [state, state_, chatbot, first_run]).then(
-            generate, [image1, video, textbox, first_run, state, state_, images_tensor], [state, state_, chatbot, first_run, textbox, images_tensor, image1])
+            generate, [image1, video, textbox, manual_textbox, first_run, state, state_, images_tensor], [state, state_, chatbot, first_run, textbox, images_tensor, image1])
 
         clear_btn.click(clear_history, [state, state_],
-                        [image1, video, textbox, first_run, state, state_, chatbot, images_tensor])
+                        [image1, video, textbox, manual_textbox, first_run, state, state_, chatbot, images_tensor])
 
     return demo
 # app = gr.mount_gradio_app(app, demo, path="/")
