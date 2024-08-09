@@ -13,7 +13,7 @@ deepspeed --num_gpus=8 llava/train/train_mem.py  \
     --data_path /mnt/raid5/weizhi/llava/final_data/llava_video_mix.json \
     --image_folder /mnt/raid5/weizhi/llava/data/ \
     --vision_tower google/siglip-so400m-patch14-384 \
-    --pretrain_mm_mlp_adapter /mnt/raid5/weizhi/checkpoints/llava-v1.5-llama-3-pretrain-clip-l/mm_projector.bin \
+    --pretrain_mm_mlp_adapter /mnt/raid5/weizhi/checkpoints/lavia-llama-3.1-pretrain-siglip-g-384-aapool-144/mm_projector.bin \
     --mm_projector_type aapool_mlp \
     --mm_vision_select_layer -1 \
     --mm_use_im_start_end False \
@@ -24,7 +24,7 @@ deepspeed --num_gpus=8 llava/train/train_mem.py  \
     --bf16 True \
     --output_dir /mnt/raid5/weizhi/checkpoints/lavia_video_llama_3.1_8b \
     --num_train_epochs 1 \
-    --per_device_train_batch_size 4 \
+    --per_device_train_batch_size 2 \
     --per_device_eval_batch_size 4 \
     --gradient_accumulation_steps 1 \
     --evaluation_strategy "no" \
