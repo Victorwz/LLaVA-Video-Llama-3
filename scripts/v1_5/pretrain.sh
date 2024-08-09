@@ -6,18 +6,19 @@
 
 deepspeed --num_gpus=8 llava/train/train_mem.py \
     --deepspeed ./scripts/zero2.json \
-    --model_name_or_path /mnt/raid5/weizhi/models/Meta-Llama-3-8B \
+    --model_name_or_path /mnt/raid5/weizhi/models/Meta-Llama-3.1-8B \
     --version plain \
     --data_path /mnt/raid5/weizhi/llava/data/LLaVA-Pretrain/blip_laion_cc_sbu_558k.json \
     --image_folder /mnt/raid5/weizhi/llava/data/llava/llava_pretrain/images/ \
-    --vision_tower openai/clip-vit-large-patch14 \
-    --mm_projector_type mlp2x_gelu \
+    --vision_tower google/siglip-so400m-patch14-384 \
+    --mm_projector_type aapool_mlp \
     --tune_mm_mlp_adapter True \
-    --mm_vision_select_layer -2 \
+    --mm_vision_select_layer -1 \
     --mm_use_im_start_end False \
     --mm_use_im_patch_token False \
+    --mm_num_image_tokens 144 \
     --bf16 True \
-    --output_dir /mnt/raid5/weizhi/checkpoints/llava-v1.5-llama-3-pretrain-clip-l \
+    --output_dir /mnt/raid5/weizhi/checkpoints/lavia-llama-3.1-pretrain-siglip-g-384-aapool-144 \
     --num_train_epochs 1 \
     --per_device_train_batch_size 16 \
     --per_device_eval_batch_size 4 \
