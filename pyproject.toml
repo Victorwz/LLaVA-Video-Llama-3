@@ -3,8 +3,8 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "vidlm"
-version = "1.0.0"
+name = "llava"
+version = "1.2.2.post1"
 description = "Towards GPT-4 like large language and visual assistant."
 readme = "README.md"
 requires-python = ">=3.8"
@@ -20,6 +20,7 @@ dependencies = [
     "gradio", "gradio_client", "pandas", "webdataset",
     "requests", "httpx", "uvicorn", "fastapi",
     "einops==0.6.1", "einops-exts==0.0.4", "timm==0.9.10", "evaluate", "protobuf",
+    "opencv-python",
 ]
 
 [project.optional-dependencies]

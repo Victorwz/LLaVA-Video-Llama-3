@@ -1,19 +1,14 @@
-from llava.conversation import conv_templates, SeparatorStyle
+from llava.conversation import conv_templates
 from llava.model.builder import load_pretrained_model
-from llava.mm_utils import tokenizer_image_token, process_images, get_model_name_from_path
+from llava.mm_utils import tokenizer_image_token
 from PIL import Image
 import requests
 import cv2
 import torch
-import base64
-import io
-from io import BytesIO
-import numpy as np
 
 # load model and processor
 device = "cuda" if torch.cuda.is_available() else "cpu"
-model_name = get_model_name_from_path("weizhiwang/LLaVA-Video-Llama-3")
-tokenizer, model, image_processor, context_len = load_pretrained_model("weizhiwang/LLaVA-Video-Llama-3", None, model_name, False, False, device=device)
+tokenizer, model, image_processor, context_len = load_pretrained_model("weizhiwang/Video-Language-Model-Llama-3.1-8B", None, "Video-Language-Model-Llama-3.1-8B", False, False, device=device)
 
 # prepare image input
 url = "https://github.com/PKU-YuanGroup/Video-LLaVA/raw/main/videollava/serve/examples/sample_demo_1.mp4"
@@ -29,26 +24,24 @@ def read_video(video_url):
                 f.write(chunk)
     
     video = cv2.VideoCapture("tmp_video.mp4")
-
-    base64Frames = []
+    video_frames = []
     while video.isOpened():
         success, frame = video.read()
         if not success:
             break
-        _, buffer = cv2.imencode(".jpg", frame)
-        base64Frames.append(base64.b64encode(buffer).decode("utf-8"))
+        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        pil_image = Image.fromarray(frame_rgb)
+        video_frames.append(pil_image)
 
     video.release()
-    print(len(base64Frames), "frames read.")
-    return base64Frames
+    print(len(video_frames), "frames read.")
+    return video_frames
 
 video_frames = read_video(video_url=url)
 image_tensors = []
-samplng_interval = int(len(video_frames) / 10)
+samplng_interval = int(len(video_frames) / 30)
 for i in range(0, len(video_frames), samplng_interval):
-    rawbytes = base64.b64decode(video_frames[i])
-    image = Image.open(io.BytesIO(rawbytes)).convert("RGB")
-    image_tensor = image_processor.preprocess(image, return_tensors='pt')['pixel_values'][0].half().cuda()
+    image_tensor = image_processor.preprocess(video_frames[i], return_tensors='pt')['pixel_values'][0].half().cuda()
     image_tensors.append(image_tensor)
 
 # prepare inputs for the model
@@ -57,7 +50,7 @@ conv = conv_templates["llama_3"].copy()
 conv.append_message(conv.roles[0], text)
 conv.append_message(conv.roles[1], None)
 prompt = conv.get_prompt()
-input_ids = tokenizer_image_token(prompt, tokenizer, -200, return_tensors='pt').unsqueeze(0).cuda()
+input_ids = tokenizer_image_token(prompt, tokenizer, return_tensors='pt').unsqueeze(0).cuda()
 
 # autoregressively generate text
 with torch.inference_mode():
