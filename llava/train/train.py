@@ -310,7 +310,7 @@ def preprocess_multimodal(
     data_args: DataArguments
 ) -> Dict:
     is_multimodal = data_args.is_multimodal
-    return sources
+
     if not is_multimodal:
         return sources
 
@@ -916,9 +916,12 @@ class LazySupervisedDataset(Dataset):
                 image = [processor.preprocess(i, return_tensors='pt')['pixel_values'][0] for i in image]
             else:
                 image = [processor.preprocess(i, return_tensors='pt')['pixel_values'][0] for i in image]
-            sources = preprocess_multimodal(
-                copy.deepcopy([e["conversations"] for e in sources]),
-                self.data_args)
+            if len(image_file) == 1:
+                sources = preprocess_multimodal(
+                    copy.deepcopy([e["conversations"] for e in sources]),
+                    self.data_args)
+            else:
+                sources = copy.deepcopy([e["conversations"] for e in sources]) 
         else:
             sources = copy.deepcopy([e["conversations"] for e in sources])
         data_dict = preprocess(
@@ -934,7 +937,7 @@ class LazySupervisedDataset(Dataset):
             data_dict['image'] = image
         elif self.data_args.is_multimodal:
             # image does not exist in the data, but the model is multimodal
-            crop_size = self.data_args.image_processor.crop_size
+            crop_size = self.data_args.image_processor.crop_size if getattr(self.data_args.image_processor, "crop_size", None) else self.data_args.image_processor.size
             data_dict['image'] = torch.zeros(3, crop_size['height'], crop_size['width'])
         return data_dict
 
@@ -1127,13 +1130,13 @@ def train(attn_implementation=None):
     elif model_args.version == "v0.5":
         tokenizer.pad_token = tokenizer.unk_token
     elif model_args.version == "v3":
-        tokenizer.pad_token = "<|reserved_special_token_0|>" # only for llama3
+        tokenizer.pad_token = "<|finetune_right_pad_id|>" # only for llama3
         conversation_lib.default_conversation = conversation_lib.conv_templates["llama_3"]
     elif model_args.version == "phi_3_instruct":
         tokenizer.pad_token = tokenizer.unk_token
         conversation_lib.default_conversation = conversation_lib.conv_templates[model_args.version]
     else:
-        tokenizer.pad_token = "<|reserved_special_token_0|>" if "llama-3" in model_args.model_name_or_path.lower() else tokenizer.unk_token
+        tokenizer.pad_token = "<|finetune_right_pad_id|" if "llama-3" in model_args.model_name_or_path.lower() else tokenizer.unk_token
         if model_args.version in conversation_lib.conv_templates:
             conversation_lib.default_conversation = conversation_lib.conv_templates[model_args.version]
         else:
