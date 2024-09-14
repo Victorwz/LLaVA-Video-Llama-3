@@ -3,12 +3,12 @@
 This repo supports the video understanding based on Llama-3-8b LLM backbone following LLaVA multimodal LLM architecture.
 
 ## Models
-🤝 [[Video-Language-Model-Llama-3.1-8B](weizhiwang/Video-Language-Model-Llama-3.1-8B)]
+🤝 [[LLaVA-Video-Llama-3.1-8B](https://huggingface.co/weizhiwang/LLaVA-Video-Llama-3.1-8B)]
 
 🤝 [[LLaVA-Video-Llama-3](https://huggingface.co/weizhiwang/LLaVA-Video-Llama-3)]
 
 ## Updates
-- [8/11/2024] A completely new video-based LLM VidLM-Llama-3.18b is released, with the SigLIP-g-384px as vision encoder and average pooling vision-language projector.
+- [8/11/2024] A completely new video-based LLM [LLaVA-Video-Llama-3.1-8B](https://huggingface.co/weizhiwang/LLaVA-Video-Llama-3.1-8B) is released, with the SigLIP-g-384px as vision encoder and average pooling vision-language projector.
 - [6/4/2024] The codebase supports the video data fine-tuning for video understanding tasks.
 - [5/14/2024] The codebase has been upgraded to llava-next (llava-v1.6). Now it supports the latest llama-3, phi-3, mistral-v0.1-7b models.
 
