@@ -316,7 +316,7 @@ def preprocess_multimodal(
 
     for source in sources:
         for sentence in source:
-            if DEFAULT_IMAGE_TOKEN in sentence['value'] and len(sentence['value'].split(DEFAULT_IMAGE_TOKEN)) <= 2:
+            if DEFAULT_IMAGE_TOKEN in sentence['value']:
                 sentence['value'] = sentence['value'].replace(DEFAULT_IMAGE_TOKEN, '').strip()
                 sentence['value'] = DEFAULT_IMAGE_TOKEN + '\n' + sentence['value']
                 sentence['value'] = sentence['value'].strip()
@@ -1136,7 +1136,7 @@ def train(attn_implementation=None):
         tokenizer.pad_token = tokenizer.unk_token
         conversation_lib.default_conversation = conversation_lib.conv_templates[model_args.version]
     else:
-        tokenizer.pad_token = "<|finetune_right_pad_id|" if "llama-3" in model_args.model_name_or_path.lower() else tokenizer.unk_token
+        tokenizer.pad_token = "<|finetune_right_pad_id|>" if "llama-3" in model_args.model_name_or_path.lower() else tokenizer.unk_token
         if model_args.version in conversation_lib.conv_templates:
             conversation_lib.default_conversation = conversation_lib.conv_templates[model_args.version]
         else:
