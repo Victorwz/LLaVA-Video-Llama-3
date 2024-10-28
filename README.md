@@ -1,4 +1,4 @@
-# LLaVA-Video-LLaMA-3
+# LLaVA-Unified
 
 This repo supports the video understanding based on Llama-3-8b LLM backbone following LLaVA multimodal LLM architecture.
 
