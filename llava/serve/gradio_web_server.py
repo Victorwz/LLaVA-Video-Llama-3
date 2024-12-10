@@ -10,6 +10,7 @@ import tempfile
 from decord import VideoReader, cpu
 from transformers import TextStreamer
 import argparse
+import moviepy.editor as mp
 
 from llava.constants import DEFAULT_IMAGE_TOKEN
 from llava.conversation import conv_templates, SeparatorStyle, Conversation
@@ -19,8 +20,15 @@ from llava.utils import (build_logger, server_error_msg,
     violates_moderation, moderation_msg)
 import hashlib
 
+import shutil
+import atexit
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
 conv_mode = "llama_3"
-model_path = 'weizhiwang/LLaVA-Video-Llama-3'
+# model_path = 'weizhiwang/LLaVA-Video-Llama-3.1-8B'
+# model_path = 'weizhiwang/LLaVA-Video-Llama-3'
+model_path = '/home/ianwu/checkpoints/LLaVA-Video-Llama-3.1-8B'
 device = 'cuda'
 load_8bit = False
 load_4bit = False
@@ -34,13 +42,28 @@ SYSTEM_PROMPT = """The input sequence of images are frames extracted from a shor
 The full task guideline is as follows:
 """
 
+def print_methods(cls):
+    for attribute in dir(cls):
+        if callable(getattr(cls, attribute)):
+            print(attribute)
+
+def trim_video(video_path, trim_point):
+    # 使用MoviePy裁剪视频
+    video_clip = mp.VideoFileClip(video_path)
+    trimmed_clip = video_clip.subclip(0, trim_point)
+    output_path = os.path.join('temp', 'trimmed_video.mp4')
+    trimmed_clip.write_videofile(output_path, codec="libx264")
+    trimmed_clip.close()
+    video_clip.close()
+    return output_path, output_path
+
+
 def save_image_to_local(image):
     filename = os.path.join('temp', next(tempfile._get_candidate_names()) + '.jpg')
     image = Image.open(image)
     image.save(filename)
     # print(filename)
     return filename
-
 
 def save_video_to_local(video_path):
     filename = os.path.join('temp', next(tempfile._get_candidate_names()) + '.mp4')
@@ -106,7 +129,7 @@ def generate(image1, video, textbox_in, manual_textbox_in, first_run, state, sta
     text_en_out, state_ = handler.generate(images_tensor, text_en_in, first_run=first_run, state=state_)
     state_.messages[-1] = (state_.roles[1], text_en_out)
 
-    text_en_out = text_en_out.split('#')[0]
+    # text_en_out = text_en_out.split('#')[0]
     textbox_out = text_en_out
 
     show_images = ""
@@ -140,13 +163,30 @@ def clear_history(state, state_):
             gr.update(value=None, interactive=True), \
             True, state, state_, state.to_gradio_chatbot(), [])
 
-def build_demo(embed_mode, cur_dir=None, concurrency_count=10):
+def cleanup_temp_directory():
+    """Clean up the temp directory by removing it and its contents"""
+    if os.path.exists("temp"):
+        shutil.rmtree("temp")
+    os.makedirs("temp")
 
+def build_demo(embed_mode, cur_dir=None, concurrency_count=10):
     # handler.model.to(dtype=dtype)
-    if not os.path.exists("temp"):
-        os.makedirs("temp")
+    # Register cleanup function to run at exit
+    atexit.register(cleanup_temp_directory)
+    
+    # Clean up temp directory at startup
+    cleanup_temp_directory()
 
     app = FastAPI()
+    
+    # Add CORS middleware to handle cleanup on page refresh
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
     textbox = gr.Textbox(
         show_label=False, placeholder="Enter text and press ENTER", container=False
@@ -154,7 +194,7 @@ def build_demo(embed_mode, cur_dir=None, concurrency_count=10):
     manual_textbox = gr.Textbox(
         show_label=False, placeholder="Insert the Task Manual", container=False
     )
-    with gr.Blocks(title='Video-LLaVA🚀', theme=gr.themes.Default(), css=block_css) as demo:
+    with gr.Blocks(title='LaViA🚀', theme=gr.themes.Default(), css=block_css) as demo:
         gr.Markdown(title_markdown)
         state = gr.State()
         state_ = gr.State()
@@ -164,7 +204,14 @@ def build_demo(embed_mode, cur_dir=None, concurrency_count=10):
         with gr.Row():
             with gr.Column(scale=3):
                 image1 = gr.Image(label="Input Image", type="filepath")
+ 
                 video = gr.Video(label="Input Video")
+                # print(type(video))
+                slider = gr.Slider(minimum=0, maximum=100, step=1, label="Cut Point (seconds)")
+                trimmed_video = gr.Video(label="Cut a Video")
+                video_change = gr.Button("Cut Video")
+                video_change.click(trim_video, inputs=[video, slider], outputs=[video, trimmed_video])
+
                 with gr.Column(scale=8):
                     manual_textbox.render()
                 cur_dir = os.path.dirname(os.path.abspath(__file__))
@@ -204,26 +251,6 @@ def build_demo(embed_mode, cur_dir=None, concurrency_count=10):
                     clear_btn = gr.Button(value="🗑️  Clear history", interactive=True)
 
         with gr.Row():
-            # gr.Examples(
-            #     examples=[
-            #         [
-            #             f"{cur_dir}/examples/sample_img_22.png",
-            #             f"{cur_dir}/examples/sample_demo_22.mp4",
-            #             "Are the instruments in the pictures used in the video?",
-            #         ],
-            #         [
-            #             f"{cur_dir}/examples/sample_img_13.png",
-            #             f"{cur_dir}/examples/sample_demo_13.mp4",
-            #             "Does the flag in the image appear in the video?",
-            #         ],
-            #         [
-            #             f"{cur_dir}/examples/sample_img_8.png",
-            #             f"{cur_dir}/examples/sample_demo_8.mp4",
-            #             "Are the image and the video depicting the same place?",
-            #         ],
-            #     ],
-            #     inputs=[image1, video, textbox],
-            # )
             gr.Examples(
                 examples=[
                     [
@@ -231,19 +258,11 @@ def build_demo(embed_mode, cur_dir=None, concurrency_count=10):
                         "This next job is removal of the recoil starter. Again, it is just the removal, not the install. And that's if you need to take additional parts off, drilling down deeper into the engine. You would remove it, set it aside for other maintenance, and then return and do the install task as you're reassembling the engine. So first thing you want to do is, if you remove both these top two nuts first, as you start loosening up the bottom nut, it can kind of shift left or right on you. So it's best to loosen them all up and leave one of the top ones in to be the last thing removed. So we'll loosen these three up. Once they're loose... I don't know if you can see that bolt down there, bottom dead center. I'm going to go ahead and get a maintenance ball out here to hold some of these parts. Alright, three bolts and that's it. This thing comes off. I'll talk about it more when we install, but as you can see, there's holes all the way around, and there's three holes evenly spaced here. So depending on how this thing is mounted, whether it's on a snowmobile, a generator, this pull starter can be rotated into different positions to facilitate different mounting positions on different pieces of equipment. So you may see this mounted in different ways, and that's okay. It can be mounted in a full clock position. And that is removal of the recoil starter.\n",
                         "The input sequence of images follow time order and stop on a specific step of the whole task. Can you reason step by step to predict what is the next step to complete in this task?\n",
                     ],
-[
+                    [
                         f"{cur_dir}/examples/sample_demo_2.mp4",
                         "This next task is similar to the first task we did, which was inspecting the air filters. This time we're going to remove the entire air assembly to get to the carburetor or other aspects. We're doing it for other maintenance removal. So we'll remove the nut or finger knot again, the air cleaner cover, the wing nut, the air filter assembly with the foam filter on the outside, and the grommet. We'll just put that to the side. The noise silencer, these two little baffles right here help reduce high frequency noise. And then now we need to remove what they call the air cleaner elbow. It's actually held in place with one bolt. Two nuts. And to remove this, you need to take your choke and pull it about halfway, and then your fuel shut off about halfway too. That way this can come out. We're going to pull the breather tube, which sits inside the overhead valve. It just snugly fits in there to allow breathing of the overhead valve. We will just pull that out. It doesn't clamp in or anything. And then we will remove... Might have to adjust these knobs just a little bit. And we will remove the air filter elbow. This allows you additional visibility to the control base, carburetor, spark plug, overhead valve. And this is, again, removal. So this is a whole task. We've removed it for other maintenance. There will be a separate install job later after you've done whatever you needed to do, maybe replace the carburetor. Then we'll reinstall it at another point for another job.\n",
                         "The input sequence of images follow time order and stop on a specific step of the whole task. Can you reason step by step to predict what is the next step to complete in this task?\n",
                     ],
-                    # [
-                    #     f"{cur_dir}/examples/sample_demo_9.mp4",
-                    #     "Describe the video.",
-                    # ],
-                    # [
-                    #     f"{cur_dir}/examples/sample_demo_22.mp4",
-                    #     "Describe the activity in the video.",
-                    # ],
                 ],
                 inputs=[video, manual_textbox, textbox],
             )
@@ -284,7 +303,7 @@ if __name__ == "__main__":
     demo.queue(
         api_open=False
     ).launch(
-        server_name=args.host,
+        server_name="0.0.0.0",#args.host,
         server_port=args.port,
         share=args.share
     )
