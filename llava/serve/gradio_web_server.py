@@ -7,7 +7,6 @@ from fastapi import FastAPI
 import os
 from PIL import Image
 import tempfile
-from decord import VideoReader, cpu
 from transformers import TextStreamer
 import argparse
 import moviepy.editor as mp
@@ -28,7 +27,7 @@ from fastapi.middleware.cors import CORSMiddleware
 conv_mode = "llama_3"
 # model_path = 'weizhiwang/LLaVA-Video-Llama-3.1-8B'
 # model_path = 'weizhiwang/LLaVA-Video-Llama-3'
-model_path = '/home/ianwu/checkpoints/LLaVA-Video-Llama-3.1-8B'
+model_path = '/mnt/raid5/weizhi/checkpoints/LLaVA-Video-Llama-3.1-8B/'
 device = 'cuda'
 load_8bit = False
 load_4bit = False

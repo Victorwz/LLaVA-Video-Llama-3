@@ -391,6 +391,17 @@ Answer the questions.""",
     sep="<|im_end|>",
 )
 
+conv_qwen_instruct = Conversation(
+    system="""<|im_start|>system
+You are a helpful assistant""",
+    roles=("<|im_start|>user\n", "<|im_start|>assistant\n"),
+    version="qwen",
+    messages=(),
+    offset=0,
+    sep_style=SeparatorStyle.MPT,
+    sep="<|im_end|>",
+)
+
 conv_phi_3_instruct = Conversation(
     system="",
     roles=("<|user|>\n", "<|assistant|>\n"),
@@ -413,6 +424,7 @@ conv_templates = {
     "chatml_direct": conv_chatml_direct,
     "mistral_direct": conv_chatml_direct,
     "phi_3_instruct": conv_phi_3_instruct,
+    "qwen_instruct": conv_qwen_instruct,
 
     "plain": conv_llava_plain,
     "v0_plain": conv_llava_plain,
