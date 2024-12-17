@@ -1,8 +1,12 @@
 # LLaVA-Unified
 
-This repo supports the video understanding based on Llama-3-8b LLM backbone following LLaVA multimodal LLM architecture.
+This repo is A Multimodal LLM Factory for Image and Video Understanding. It supports the training and deployment of Multimodal LLMs based on latest open-sourced LLMs like Llama-3.1/3.2 and Qwen2.5.
 
 ## Models
+### Image Understanding Models
+🤝 [[LLaVA-Llama-3-8B](https://huggingface.co/weizhiwang/LLaVA-Llama-3-8B)]
+
+### Video Understanding Models
 🤝 [[LLaVA-Video-Qwen2.5-7B](https://huggingface.co/weizhiwang/LLaVA-Video-Qwen2.5-7B)]
 
 🤝 [[LLaVA-Video-Llama-3.1-8B](https://huggingface.co/weizhiwang/LLaVA-Video-Llama-3.1-8B)]
