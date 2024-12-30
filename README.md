@@ -1,14 +1,19 @@
 # LLaVA-Unified
 
-This repo supports the video understanding based on Llama-3-8b LLM backbone following LLaVA multimodal LLM architecture.
+This repo is A Multimodal LLM Factory for Image and Video Understanding. It supports the training and deployment of Multimodal LLMs based on latest open-sourced LLMs like Llama-3.1/3.2 and Qwen2.5.
 
 ## Models
+### Image Understanding Models
+🤝 [[LLaVA-Llama-3-8B](https://huggingface.co/weizhiwang/LLaVA-Llama-3-8B)]
+
+### Video Understanding Models
+🤝 [[LLaVA-Video-Qwen2.5-7B](https://huggingface.co/weizhiwang/LLaVA-Video-Qwen2.5-7B)]
+
 🤝 [[LLaVA-Video-Llama-3.1-8B](https://huggingface.co/weizhiwang/LLaVA-Video-Llama-3.1-8B)]
 
-🤝 [[LLaVA-Video-Llama-3](https://huggingface.co/weizhiwang/LLaVA-Video-Llama-3)]
-
 ## Updates
-- [8/11/2024] A completely new video-based LLM [LLaVA-Video-Llama-3.1-8B](https://huggingface.co/weizhiwang/LLaVA-Video-Llama-3.1-8B) is released, with the SigLIP-g-384px as vision encoder and average pooling vision-language projector.
+- [12/17/2024] A new video-based MLLM [LLaVA-Video-Qwen2.5-7B](https://huggingface.co/weizhiwang/LLaVA-Video-Qwen2.5-7B) is released, with the SigLIP-g-384px as vision encoder and average pooling vision-language projector.
+- [8/11/2024] A completely new video-based MLLM [LLaVA-Video-Llama-3.1-8B](https://huggingface.co/weizhiwang/LLaVA-Video-Llama-3.1-8B) is released, with the SigLIP-g-384px as vision encoder and average pooling vision-language projector.
 - [6/4/2024] The codebase supports the video data fine-tuning for video understanding tasks.
 - [5/14/2024] The codebase has been upgraded to llava-next (llava-v1.6). Now it supports the latest llama-3, phi-3, mistral-v0.1-7b models.
 
@@ -52,16 +57,16 @@ TODO
 This is a reproduction project, all research credits should be attributed to original authors for LLaVA. Please cite their papers listed below as well.
 
 ```bibtex
-@misc{wang2024llavavideollama3,
-  title={LLaVA-Video-Llama-3: A Video Understanding Multimodal LLM based on Llama-3-8B LLM backbone},
+@misc{wang2024llavaunified,
+  title={LLaVA-Unified: A Multimodal LLM Factory for Image and Video Understanding},
   author={Wang, Weizhi},
   year={2024}
 }
 ```
 
 ```bibtex
-@misc{wang2024llavallama3,
-  title={LLaVA-Llama-3-8B: A reproduction towards LLaVA-v1.5 based on Llama-3-8B LLM backbone},
+@misc{wang2024llavavideollama3,
+  title={LLaVA-Video-Llama-3: A Video Understanding Multimodal LLM based on Llama-3-8B LLM backbone},
   author={Wang, Weizhi},
   year={2024}
 }
